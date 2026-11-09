@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: m2l-pilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: m2l
+      POSTGRES_PASSWORD: m2l_dev_password
+      POSTGRES_DB: m2l_pilot
+    ports: ["5432:5432"]
+    volumes: ["m2l_pilot_postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U m2l -d m2l_pilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  m2l_pilot_postgres_data:

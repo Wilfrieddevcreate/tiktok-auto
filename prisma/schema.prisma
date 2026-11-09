@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACTIVE
+  REAUTH_REQUIRED
+  REVOKED
+  ERROR
+}
+
+enum UploadStatus {
+  INITIALIZED
+  UPLOADING
+  UPLOADED
+  PENDING_CREATOR_ACTION
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  EXPIRED
+}
+
+model OAuthState {
+  id String @id @default(cuid())
+  organizationId String?
+  clientId String?
+  initiatedByUserId String?
+  connectionProduct String @default("DEVELOPER")
+  stateHash String @unique
+  redirectUri String
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+model TikTokConnection {
+  id String @id @default(cuid())
+  organizationId String?
+  clientId String?
+  product String @default("DEVELOPER")
+  externalSubject String?
+  encryptedAccessToken String
+  encryptedRefreshToken String
+  scopes String
+  accessTokenExpiresAt DateTime
+  refreshTokenExpiresAt DateTime?
+  verificationStatus String @default("UNVERIFIED")
+  lastVerifiedAt DateTime?
+  evidenceRef String?
+  sourceObservedAt DateTime?
+  status ConnectionStatus @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  uploads TikTokUpload[]
+  @@index([organizationId, clientId])
+  @@index([externalSubject])
+}
+
+model TikTokUpload {
+  id String @id @default(cuid())
+  connectionId String
+  publishId String @unique
+  uploadUrl String?
+  status UploadStatus @default(INITIALIZED)
+  source String
+  fileSize BigInt?
+  contentType String?
+  failureReason String?
+  sourceObservedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  connection TikTokConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  @@index([connectionId, status])
+}
